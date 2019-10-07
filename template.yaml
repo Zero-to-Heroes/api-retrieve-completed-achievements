@@ -1,0 +1,41 @@
+# https://github.com/awslabs/serverless-application-model/blob/develop/versions/2016-10-31.md
+# Indentation needs to be set with spaces, because YAML...
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: API endpoint to retrieve achievements for users
+
+Globals:
+    Api:
+        # API Gateway regional endpoints
+        EndpointConfiguration: EDGE
+        Cors:
+            AllowMethods: "'*'"
+            AllowHeaders: "'*'"
+            AllowOrigin: "'*'"
+
+Resources:
+    ProcessRetrieveCompletedAchievementsFunction:
+        Type: AWS::Serverless::Function
+        Properties:
+            Handler: retrieve-completed-achievements.default
+            Runtime: nodejs8.10
+            Timeout: 180
+            Tracing: Active
+            CodeUri: ./dist/retrieve-completed-achievements
+            Policies:
+                - AWSLambdaVPCAccessExecutionRole
+                - AmazonSESFullAccess
+                - SecretsManagerReadWrite
+            Events:
+                RetrieveCompletedAchievementsEvent:
+                    Type: Api
+                    Properties:
+                        Path: /{proxy+}
+                        Method: any
+
+Outputs:
+    ProcessRetrieveCompletedAchievementsApi:
+        Description: URL to retrieve match stats for Firestone users
+        Value: !Sub 'https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/completedAchievements'
+        Export:
+            Name: ProcessRetrieveCompletedAchievementsApi
