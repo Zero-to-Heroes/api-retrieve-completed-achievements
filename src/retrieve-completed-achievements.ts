@@ -6,9 +6,9 @@ import { Rds } from './db/rds';
 export default async (event): Promise<any> => {
 	try {
 		const rds = await Rds.getInstance();
-		console.log('input', JSON.stringify(event));
+		// console.log('input', JSON.stringify(event));
 		const userInfo = JSON.parse(event.body);
-		console.log('getting stats for user', userInfo);
+		// console.log('getting stats for user', userInfo);
 		const uniqueIdentifiers = await rds.runQuery<readonly any[]>(
 			`
 			SELECT DISTINCT userName, userId, userMachineId 
@@ -18,7 +18,7 @@ export default async (event): Promise<any> => {
 				OR userMachineId = '${userInfo.machineId || '__invalid__'}'
 		`,
 		);
-		console.log('unique identifiers', uniqueIdentifiers);
+		// console.log('unique identifiers', uniqueIdentifiers);
 		const userNamesCondition = uniqueIdentifiers.map(id => "'" + id.userName + "'").join(',');
 		const userIdCondition = uniqueIdentifiers.map(id => "'" + id.userId + "'").join(',');
 		const machineIdCondition = uniqueIdentifiers.map(id => "'" + id.userMachineId + "'").join(',');
@@ -33,20 +33,20 @@ export default async (event): Promise<any> => {
 			ORDER BY achievementId
 		`,
 		);
-		console.log('allAchievements', allAchievements);
+		// console.log('allAchievements', allAchievements);
 		const results: readonly CompletedAchievement[] = allAchievements.map(result =>
 			Object.assign(new CompletedAchievement(), {
 				id: result.achievementId,
 				numberOfCompletions: result.numberOfCompletions,
 			} as CompletedAchievement),
 		);
-		console.log('results', results);
+		// console.log('results', results);
 		const response = {
 			statusCode: 200,
 			isBase64Encoded: false,
 			body: JSON.stringify({ results }),
 		};
-		console.log('sending back success reponse');
+		// console.log('sending back success reponse');
 		return response;
 	} catch (e) {
 		console.error('issue retrieving stats', e);
