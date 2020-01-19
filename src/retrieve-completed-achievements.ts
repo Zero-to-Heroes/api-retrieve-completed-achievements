@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-use-before-define */
 import { Rds } from './db/rds';
 
 // This example demonstrates a NodeJS 8.10 async handler[1], however of course you could use
@@ -22,6 +23,13 @@ export default async (event): Promise<any> => {
 		const userNamesCondition = uniqueIdentifiers.map(id => "'" + id.userName + "'").join(',');
 		const userIdCondition = uniqueIdentifiers.map(id => "'" + id.userId + "'").join(',');
 		const machineIdCondition = uniqueIdentifiers.map(id => "'" + id.userMachineId + "'").join(',');
+		if (isEmpty(userNamesCondition) || isEmpty(userIdCondition) || isEmpty(machineIdCondition)) {
+			return {
+				statusCode: 200,
+				isBase64Encoded: false,
+				body: JSON.stringify({ results: [] }),
+			};
+		}
 		const allAchievements = await rds.runQuery<readonly any[]>(
 			`
 			SELECT achievementId, max(numberOfCompletions) AS numberOfCompletions 
@@ -49,7 +57,7 @@ export default async (event): Promise<any> => {
 		// console.log('sending back success reponse');
 		return response;
 	} catch (e) {
-		console.error('issue retrieving stats', e);
+		console.error('issue retrieving stats', e, event);
 		const response = {
 			statusCode: 500,
 			isBase64Encoded: false,
@@ -59,6 +67,8 @@ export default async (event): Promise<any> => {
 		return response;
 	}
 };
+
+const isEmpty = (input: string) => !input || input.length === 0;
 
 class CompletedAchievement {
 	readonly id: string;
