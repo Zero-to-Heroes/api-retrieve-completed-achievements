@@ -26,9 +26,18 @@ export default async (event): Promise<any> => {
 		if (debug) {
 			console.log('unique identifiers', uniqueIdentifiers);
 		}
-		const userNamesCondition = uniqueIdentifiers.map(id => "'" + id.userName + "'").join(',');
-		const userIdCondition = uniqueIdentifiers.map(id => "'" + id.userId + "'").join(',');
-		const machineIdCondition = uniqueIdentifiers.map(id => "'" + id.userMachineId + "'").join(',');
+		const userNamesCondition = uniqueIdentifiers
+			// .filter(id => id.userName)
+			.map(id => "'" + id.userName + "'")
+			.join(',');
+		const userIdCondition = uniqueIdentifiers
+			// .filter(id => id.userId)
+			.map(id => "'" + id.userId + "'")
+			.join(',');
+		const machineIdCondition = uniqueIdentifiers
+			// .filter(id => id.userMachineId)
+			.map(id => "'" + id.userMachineId + "'")
+			.join(',');
 		if (isEmpty(userNamesCondition) || isEmpty(userIdCondition) || isEmpty(machineIdCondition)) {
 			return {
 				statusCode: 200,
