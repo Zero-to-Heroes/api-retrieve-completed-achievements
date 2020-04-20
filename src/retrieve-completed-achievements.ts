@@ -1,16 +1,20 @@
 /* eslint-disable @typescript-eslint/no-use-before-define */
-import { Rds } from './db/rds';
+import db from './db/rds';
 
 // This example demonstrates a NodeJS 8.10 async handler[1], however of course you could use
 // the more traditional callback-style handler.
 // [1]: https://aws.amazon.com/blogs/compute/node-js-8-10-runtime-now-available-in-aws-lambda/
 export default async (event): Promise<any> => {
 	try {
-		const rds = await Rds.getInstance();
+		const mysql = await db.getConnection();
 		// console.log('input', JSON.stringify(event));
 		const userInfo = JSON.parse(event.body);
 		// console.log('getting stats for user', userInfo);
-		const uniqueIdentifiers = await rds.runQuery<readonly any[]>(
+		const debug = userInfo.userName === 'daedin';
+		if (debug) {
+			console.log('debug mode');
+		}
+		const uniqueIdentifiers = await mysql.query(
 			`
 			SELECT DISTINCT userName, userId, userMachineId 
 			FROM achievement_stat
@@ -19,7 +23,9 @@ export default async (event): Promise<any> => {
 				OR userMachineId = '${userInfo.machineId || '__invalid__'}'
 		`,
 		);
-		// console.log('unique identifiers', uniqueIdentifiers);
+		if (debug) {
+			console.log('unique identifiers', uniqueIdentifiers);
+		}
 		const userNamesCondition = uniqueIdentifiers.map(id => "'" + id.userName + "'").join(',');
 		const userIdCondition = uniqueIdentifiers.map(id => "'" + id.userId + "'").join(',');
 		const machineIdCondition = uniqueIdentifiers.map(id => "'" + id.userMachineId + "'").join(',');
@@ -30,8 +36,7 @@ export default async (event): Promise<any> => {
 				body: JSON.stringify({ results: [] }),
 			};
 		}
-		const allAchievements = await rds.runQuery<readonly any[]>(
-			`
+		const query = `
 			SELECT achievementId, max(numberOfCompletions) AS numberOfCompletions 
 			FROM achievement_stat
 			WHERE userName in (${userNamesCondition})
@@ -39,15 +44,20 @@ export default async (event): Promise<any> => {
 				OR userMachineId in (${machineIdCondition})
 			GROUP BY achievementId
 			ORDER BY achievementId
-		`,
-		);
-		// console.log('allAchievements', allAchievements);
+		`;
+		if (debug) {
+			console.log('running query', query);
+		}
+		const allAchievements = await mysql.query(query);
 		const results: readonly CompletedAchievement[] = allAchievements.map(result =>
 			Object.assign(new CompletedAchievement(), {
 				id: result.achievementId,
 				numberOfCompletions: result.numberOfCompletions,
 			} as CompletedAchievement),
 		);
+		if (debug) {
+			console.log('results', results.filter(ach => ach.id.indexOf('global_mana_spent_') !== -1));
+		}
 		// console.log('results', results);
 		const response = {
 			statusCode: 200,
