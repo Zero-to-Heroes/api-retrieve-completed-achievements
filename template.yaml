@@ -26,6 +26,8 @@ Resources:
                 - AWSLambdaVPCAccessExecutionRole
                 - AmazonSESFullAccess
                 - SecretsManagerReadWrite
+            Tags:
+                LambdaName: api-retrieve-user-achievements
             Events:
                 RetrieveCompletedAchievementsEvent:
                     Type: Api
