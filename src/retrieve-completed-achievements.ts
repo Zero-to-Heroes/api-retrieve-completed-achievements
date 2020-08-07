@@ -7,22 +7,20 @@ import db from './db/rds';
 export default async (event): Promise<any> => {
 	try {
 		const mysql = await db.getConnection();
-		// console.log('input', JSON.stringify(event));
+		console.log('input', JSON.stringify(event));
 		const userInfo = JSON.parse(event.body);
-		// console.log('getting stats for user', userInfo);
+		console.log('getting stats for user', userInfo);
 		const debug = userInfo.userName === 'daedin';
-		if (debug) {
-			console.log('debug mode');
-		}
-		const uniqueIdentifiers = await mysql.query(
-			`
-			SELECT DISTINCT userName, userId, userMachineId 
+		const uniqueIdentifiersQuery = `
+			SELECT DISTINCT userName, userId 
 			FROM achievement_stat
 			WHERE userName = '${userInfo.userName || '__invalid__'}' 
-				OR userId = '${userInfo.userId || '__invalid__'}' 
-				OR userMachineId = '${userInfo.machineId || '__invalid__'}'
-		`,
-		);
+				OR userId = '${userInfo.userId || '__invalid__'}'
+		`;
+		if (debug) {
+			console.log('debug mode', uniqueIdentifiersQuery);
+		}
+		const uniqueIdentifiers = await mysql.query(uniqueIdentifiersQuery);
 		if (debug) {
 			console.log('unique identifiers', uniqueIdentifiers);
 		}
@@ -34,11 +32,11 @@ export default async (event): Promise<any> => {
 			// .filter(id => id.userId)
 			.map(id => "'" + id.userId + "'")
 			.join(',');
-		const machineIdCondition = uniqueIdentifiers
-			// .filter(id => id.userMachineId)
-			.map(id => "'" + id.userMachineId + "'")
-			.join(',');
-		if (isEmpty(userNamesCondition) || isEmpty(userIdCondition) || isEmpty(machineIdCondition)) {
+		// const machineIdCondition = uniqueIdentifiers
+		// 	// .filter(id => id.userMachineId)
+		// 	.map(id => "'" + id.userMachineId + "'")
+		// 	.join(',');
+		if (isEmpty(userNamesCondition) || isEmpty(userIdCondition)) {
 			return {
 				statusCode: 200,
 				isBase64Encoded: false,
@@ -48,9 +46,7 @@ export default async (event): Promise<any> => {
 		const query = `
 			SELECT achievementId, max(numberOfCompletions) AS numberOfCompletions 
 			FROM achievement_stat
-			WHERE userName in (${userNamesCondition})
-				OR userId in (${userIdCondition})
-				OR userMachineId in (${machineIdCondition})
+			WHERE userName in (${userNamesCondition}) OR userId in (${userIdCondition})
 			GROUP BY achievementId
 			ORDER BY achievementId
 		`;
@@ -80,7 +76,7 @@ export default async (event): Promise<any> => {
 		const response = {
 			statusCode: 500,
 			isBase64Encoded: false,
-			body: JSON.stringify({ message: 'not ok', exception: e }),
+			body: JSON.stringify({ message: 'not ok', exception: e.message, error: e.error }),
 		};
 		console.log('sending back error reponse', response);
 		return response;
