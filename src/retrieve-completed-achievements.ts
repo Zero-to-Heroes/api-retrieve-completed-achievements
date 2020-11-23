@@ -64,6 +64,7 @@ export default async (event): Promise<any> => {
 		if (debug) {
 			console.log('results', results.filter(ach => ach.id.indexOf('global_mana_spent_') !== -1));
 		}
+		await mysql.end();
 		// console.log('results', results);
 		const stringResults = JSON.stringify({ results });
 		const gzippedResults = gzipSync(stringResults).toString('base64');
