@@ -1,4 +1,5 @@
 /* eslint-disable @typescript-eslint/no-use-before-define */
+import SqlString from 'sqlstring';
 import { gzipSync } from 'zlib';
 import db from './db/rds';
 
@@ -9,14 +10,15 @@ export default async (event): Promise<any> => {
 	try {
 		const mysql = await db.getConnection();
 		console.log('input', JSON.stringify(event));
+		const escape = SqlString.escape;
 		const userInfo = JSON.parse(event.body);
 		console.log('getting stats for user', userInfo);
 		const debug = userInfo.userName === 'daedin';
 		const uniqueIdentifiersQuery = `
 			SELECT DISTINCT userName, userId 
 			FROM achievement_stat
-			WHERE userName = '${userInfo.userName || '__invalid__'}' 
-				OR userId = '${userInfo.userId || '__invalid__'}'
+			WHERE userName = ${escape(userInfo.userName || '__invalid__')}
+				OR userId = ${escape(userInfo.userId || '__invalid__')}
 		`;
 		if (debug) {
 			console.log('debug mode', uniqueIdentifiersQuery);
