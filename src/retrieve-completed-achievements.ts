@@ -53,8 +53,8 @@ export default async (event): Promise<any> => {
 			GROUP BY achievementId
 			ORDER BY achievementId
 		`;
+		console.log('running query', query);
 		if (debug) {
-			console.log('running query', query);
 		}
 		const allAchievements = await mysql.query(query);
 		const results: readonly CompletedAchievement[] = allAchievements.map(result =>
@@ -63,8 +63,8 @@ export default async (event): Promise<any> => {
 				numberOfCompletions: result.numberOfCompletions,
 			} as CompletedAchievement),
 		);
+		console.log('results', results.filter(ach => ach.id.indexOf('global_mana_spent_') !== -1));
 		if (debug) {
-			console.log('results', results.filter(ach => ach.id.indexOf('global_mana_spent_') !== -1));
 		}
 		await mysql.end();
 		// console.log('results', results);
